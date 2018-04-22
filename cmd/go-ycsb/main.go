@@ -37,10 +37,12 @@ import (
 
 	// Register basic database
 	_ "github.com/pingcap/go-ycsb/db/basic"
+	// Register Ghostor database
+	_ "github.com/pingcap/go-ycsb/db/ghostor"
 	// Register MySQL database
 	_ "github.com/pingcap/go-ycsb/db/mysql"
 	// Register TiKV database
-	_ "github.com/pingcap/go-ycsb/db/tikv"
+	//_ "github.com/pingcap/go-ycsb/db/tikv"
 )
 
 var (
