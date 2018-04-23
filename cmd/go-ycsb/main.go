@@ -39,6 +39,8 @@ import (
 	_ "github.com/pingcap/go-ycsb/db/basic"
 	// Register Ghostor database
 	_ "github.com/pingcap/go-ycsb/db/ghostor"
+	// Register Raw database
+	_ "github.com/pingcap/go-ycsb/db/raw"
 	// Register MySQL database
 	_ "github.com/pingcap/go-ycsb/db/mysql"
 	// Register TiKV database
