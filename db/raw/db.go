@@ -33,14 +33,19 @@ package ghostor
 import (
 	"context"
 	"crypto/tls"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"sync/atomic"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/immesys/bw2/crypto"
 	"github.com/magiconair/properties"
 	"github.com/pingcap/go-ycsb/pkg/ycsb"
 	"github.com/ucbrise/ghostor/core"
 	"github.com/ucbrise/ghostor/ghostor"
+	"github.com/ucbrise/ghostor/grpcint"
 	"github.com/ucbrise/ghostor/raw"
 )
 
@@ -53,7 +58,9 @@ type contextKey string
 const stateKey = contextKey("rawDB")
 
 type rawDB struct {
-	client *raw.Client
+	client   *raw.Client
+	tokens   []*grpcint.UnblindedToken
+	tokenIdx int32
 }
 
 func (db *rawDB) InitThread(ctx context.Context, _ int, _ int) context.Context {
@@ -121,6 +128,12 @@ func (db *rawDB) Insert(ctx context.Context, table string, key string, values ma
 		return err
 	}
 
+	token := db.tokens[atomic.AddInt32(&db.tokenIdx, 1)]
+	if err = db.client.CreateFile(ctx, key, token); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
 	err = db.client.WriteFile(ctx, key, contents)
 	if err != nil {
 		fmt.Println(err)
@@ -142,6 +155,26 @@ func (ghostorCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 	db.client, err = raw.NewClient(ServerAddr, TLSConfig)
 	if err != nil {
 		return nil, err
+	}
+
+	var tokenBuffer []byte
+	if tokenBuffer, err = ioutil.ReadFile("tokens"); err != nil {
+		fmt.Println("No \"tokens\" file found; not using tokens")
+	} else {
+		fmt.Println("Loading tokens from file...")
+		var i uint32
+		for i != uint32(len(tokenBuffer)) {
+			tokenLen := binary.LittleEndian.Uint32(tokenBuffer[i : i+4])
+			tokenBytes := tokenBuffer[i+4 : i+4+tokenLen]
+			token := new(grpcint.UnblindedToken)
+			if err = proto.Unmarshal(tokenBytes, token); err != nil {
+				panic(err)
+			}
+			db.tokens = append(db.tokens, token)
+			i += (4 + tokenLen)
+		}
+		db.tokenIdx = -1
+		fmt.Println("Finished loading tokens")
 	}
 
 	return db, nil
