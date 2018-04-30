@@ -44,7 +44,7 @@ import (
 	"github.com/ucbrise/ghostor/raw"
 )
 
-const ServerAddr = "localhost:49563"
+const ServerAddr = "10.0.0.176:49563"
 
 var TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
@@ -83,7 +83,7 @@ func (db *rawDB) Read(ctx context.Context, table string, key string, fields []st
 	}
 
 	var parsed map[string][]byte
-	json.Unmarshal(data, parsed)
+	json.Unmarshal(data, &parsed)
 
 	var res map[string][]byte
 	if len(fields) > 0 {

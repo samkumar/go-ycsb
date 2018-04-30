@@ -43,7 +43,7 @@ import (
 	"github.com/ucbrise/ghostor/ghostor"
 )
 
-const ServerAddr = "localhost:49563"
+const ServerAddr = "10.0.0.176:49563"
 const VerifierAddr = "localhost:14247"
 
 var TLSConfig = &tls.Config{InsecureSkipVerify: true}
@@ -78,6 +78,7 @@ func (db *ghostorDB) Read(ctx context.Context, table string, key string, fields 
 	name := crypto.FmtKey(pvk)
 	data, err := db.client.ReadFile(ctx, name)
 	if err == ghostor.ErrFileDoesNotExist {
+		fmt.Println("Does not exist (read)", key)
 		return nil, nil
 	} else if err != nil {
 		fmt.Println(err)
@@ -85,7 +86,7 @@ func (db *ghostorDB) Read(ctx context.Context, table string, key string, fields 
 	}
 
 	var parsed map[string][]byte
-	json.Unmarshal(data, parsed)
+	json.Unmarshal(data, &parsed)
 
 	var res map[string][]byte
 	if len(fields) > 0 {
@@ -114,6 +115,7 @@ func (db *ghostorDB) Update(ctx context.Context, table string, key string, value
 	name := crypto.FmtKey(pvk)
 	err = db.client.WriteFile(ctx, name, contents)
 	if err == ghostor.ErrFileDoesNotExist {
+		fmt.Println("Does not exist (update)")
 		return nil
 	}
 	return err

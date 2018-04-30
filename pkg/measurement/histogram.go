@@ -37,7 +37,7 @@ func newHistogram(_ *properties.Properties) *histogram {
 	h := new(histogram)
 	// TODO: support defining buckets from properties
 	// bucket unit is 1ms
-	h.upperBounds = make([]int, 1024)
+	h.upperBounds = make([]int, 64 * 1024)
 	for i := 0; i < len(h.upperBounds); i++ {
 		h.upperBounds[i] = (i + 1) * 1000
 	}
