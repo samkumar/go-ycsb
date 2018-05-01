@@ -74,14 +74,16 @@ func (db *rawDB) Close() error {
 	return nil
 }
 
-func (db *rawDB) nameFromKey(key string) (psk []byte, pvk []byte) {
+func nameFromKey(key string) (psk []byte, pvk []byte) {
 	psk = core.Hash([]byte(key))
 	pvk = crypto.VKforSK(psk)
 	return
 }
 
 func (db *rawDB) Read(ctx context.Context, table string, key string, fields []string) (map[string][]byte, error) {
-	data, err := db.client.ReadFile(ctx, key)
+	_, vk := nameFromKey(key)
+	filename := crypto.FmtKey(vk)
+	data, err := db.client.ReadFile(ctx, filename)
 	if err == ghostor.ErrFileDoesNotExist {
 		return nil, nil
 	} else if err != nil {
@@ -115,7 +117,10 @@ func (db *rawDB) Update(ctx context.Context, table string, key string, values ma
 		return err
 	}
 
-	err = db.client.WriteFile(ctx, key, contents)
+	_, vk := nameFromKey(key)
+	filename := crypto.FmtKey(vk)
+
+	err = db.client.WriteFile(ctx, filename, contents)
 	if err == ghostor.ErrFileDoesNotExist {
 		return nil
 	}
@@ -128,13 +133,16 @@ func (db *rawDB) Insert(ctx context.Context, table string, key string, values ma
 		return err
 	}
 
+	sk, vk := nameFromKey(key)
+	filename := crypto.FmtKey(vk)
+
 	token := db.tokens[atomic.AddInt32(&db.tokenIdx, 1)]
-	if err = db.client.CreateFile(ctx, key, token); err != nil {
+	if err = db.client.CreateFile(ctx, filename, token, sk); err != nil {
 		fmt.Println(err)
 		return err
 	}
 
-	err = db.client.WriteFile(ctx, key, contents)
+	err = db.client.WriteFile(ctx, filename, contents)
 	if err != nil {
 		fmt.Println(err)
 	}

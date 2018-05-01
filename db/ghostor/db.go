@@ -74,14 +74,14 @@ func (db *ghostorDB) Close() error {
 	return nil
 }
 
-func (db *ghostorDB) nameFromKey(key string) (psk []byte, pvk []byte) {
+func nameFromKey(key string) (psk []byte, pvk []byte) {
 	psk = core.Hash([]byte(key))
 	pvk = crypto.VKforSK(psk)
 	return
 }
 
 func (db *ghostorDB) Read(ctx context.Context, table string, key string, fields []string) (map[string][]byte, error) {
-	_, pvk := db.nameFromKey(key)
+	_, pvk := nameFromKey(key)
 	name := crypto.FmtKey(pvk)
 	data, err := db.client.ReadFile(ctx, name)
 	if err == ghostor.ErrFileDoesNotExist {
@@ -118,7 +118,7 @@ func (db *ghostorDB) Update(ctx context.Context, table string, key string, value
 		return err
 	}
 
-	_, pvk := db.nameFromKey(key)
+	_, pvk := nameFromKey(key)
 	name := crypto.FmtKey(pvk)
 	err = db.client.WriteFile(ctx, name, contents)
 	if err == ghostor.ErrFileDoesNotExist {
@@ -134,7 +134,7 @@ func (db *ghostorDB) Insert(ctx context.Context, table string, key string, value
 		return err
 	}
 
-	psk, pvk := db.nameFromKey(key)
+	psk, pvk := nameFromKey(key)
 	filename := crypto.FmtKey(pvk)
 
 	token := db.tokens[atomic.AddInt32(&db.tokenIdx, 1)]
