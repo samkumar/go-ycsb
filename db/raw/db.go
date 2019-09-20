@@ -49,7 +49,7 @@ import (
 	"github.com/ucbrise/ghostor/raw"
 )
 
-const ServerAddr = "10.0.0.176:49563"
+const ServerAddr = "10.0.0.115:49563"
 
 var TLSConfig = &tls.Config{InsecureSkipVerify: true}
 
@@ -170,16 +170,16 @@ func (ghostorCreator) Create(p *properties.Properties) (ycsb.DB, error) {
 		fmt.Println("No \"tokens\" file found; not using tokens")
 	} else {
 		fmt.Println("Loading tokens from file...")
-		var i uint32
-		for i != uint32(len(tokenBuffer)) {
-			tokenLen := binary.LittleEndian.Uint32(tokenBuffer[i : i+4])
+		var i uint64
+		for i != uint64(len(tokenBuffer)) {
+			tokenLen := uint64(binary.LittleEndian.Uint32(tokenBuffer[i : i+4]))
 			tokenBytes := tokenBuffer[i+4 : i+4+tokenLen]
 			token := new(grpcint.UnblindedToken)
 			if err = proto.Unmarshal(tokenBytes, token); err != nil {
 				panic(err)
 			}
 			db.tokens = append(db.tokens, token)
-			i += (4 + tokenLen)
+			i += uint64(4 + tokenLen)
 		}
 		db.tokenIdx = -1
 		fmt.Println("Finished loading tokens")
